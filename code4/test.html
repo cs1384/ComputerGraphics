@@ -1,0 +1,379 @@
+<script src=lib1.js></script>
+
+<body bgcolor=black>
+<center>
+<td><canvas id='canvas1' width=500 height=500></canvas></td>
+</center>
+</body>
+
+<script id='my_vertex_shader' type='x-shader/x-vertex'>
+   attribute vec3 aPosition;
+   varying   vec3 vPosition;
+   void main() {
+      gl_Position = vec4(aPosition, 1.0);
+      vPosition = aPosition;
+   }
+</script>
+
+<script id='my_fragment_shader' type='x-shader/x-fragment'>
+
+   precision mediump float;
+   uniform float uTime;
+   uniform vec3  uCursor;
+   varying vec3  vPosition;
+
+   vec3 Lrgbs[2];
+   vec3 Ldirs[2];
+
+   vec4 aCube[6];
+   vec3 spaceMaterials[6];
+   float tins[6];
+   float touts[6];
+
+   vec4 spheres[3];
+   vec3 sphereMaterials[6];
+   float tval[3];
+
+   vec4 cSpaces[2];
+
+   // Compute intersection of a ray with a sphere, if any.  Return t.
+   // If there is no intersection, return 10000.
+
+   float raySphere(vec3 V, vec3 W, vec4 S) {
+      // YOU NEED TO COMPUTE t, BY SETTING UP AND THEN SOLVING A QUADRATIC EQUATION.
+      float a = dot(W, W);
+      vec3 temp = vec3(V.x-S.x, V.y-S.y, V.z-S.z);
+      float b = 2. * dot(W, temp);
+      float c = dot(temp, temp) - pow(S.w, 2.);
+
+      float r1 = (0. - b + sqrt( pow(b,2.) - 4.*a*c )) / 2.*a;
+      float r2 = (0. - b - sqrt( pow(b,2.) - 4.*a*c )) / 2.*a;
+      
+      if(r1<0. && r2<0.) return 10000.;
+      //if(r1<0. && r2>=0.) return r2;
+      //if(r1>=0. && r2<0.) return r1;
+      return min(r1,r2);
+   }
+
+   float raySpace(vec3 V, vec3 W, vec4 s) {
+      float numer = dot(V,s.xyz)+s.w;
+      float denom = dot(W,s.xyz);
+      float t = -numer / denom;
+      if(denom<0.){
+         return t;
+      }else if(denom>0.){
+         return 0.;
+      }else{
+         if(numer<=0.){
+            return 0.;
+         }else{
+            // the ray misses the cube. make sure tinMax will be less than tralMin
+            return 10000.;
+         }
+      }
+   }
+   float raySpaceOut(vec3 V, vec3 W, vec4 s) {
+      float numer = dot(V,s.xyz)+s.w;
+      float denom = dot(W,s.xyz);
+      float t = -numer / denom;
+      if(denom<0.){
+         return 10000.;
+      }else if(denom>0.){
+         return t;
+      }else{
+         if(numer<=0.){
+            return 10000.;
+         }else{
+            return 10000.;
+         }
+      }
+   }
+
+   // Mirror reflection
+   vec3 getReflectedColor(vec3 Lrgb, vec3 Ldir, vec3 point, vec4 sphere, vec3 material) {
+      vec3 color = vec3(0.,0.,0.);
+      float diffuse = .3;
+
+      vec3 normal = vec3((point.x-sphere.x)/sphere.w, (point.y-sphere.y)/sphere.w, (point.z-sphere.z)/sphere.w);
+
+      vec3 ambient = material / 3.;
+      color += ambient + Lrgb * diffuse * max(0., dot(normal, Ldir));
+      return color;
+   }
+   
+   vec3 shadeSphere(vec3 W, vec3 point, int id, vec4 sphere, vec3 material) {
+      vec3 color = vec3(0.,0.,0.);
+      
+      // SETTING
+
+      float diffuse = .4;
+      float epslon = .01;
+
+      // NORMAL
+
+      vec3 normal = vec3((point.x-sphere.x)/sphere.w, (point.y-sphere.y)/sphere.w, (point.z-sphere.z)/sphere.w);
+
+      // EFFECTS
+      
+      //specular reflection
+      float spec = .3;
+      float specPower = 10.;
+      //mirror reflection
+      vec3 Rrgb = vec3(0.,0.,0.);
+      vec3 Rdir = 2. * dot(normal, -W) * normal - (-W);
+      //iterate lights
+      for(int i=0;i<2;i++){ 
+         bool skip = false;
+         //iterate spheres
+         for(int j=0;j<3;j++){
+            //check if in the shadow
+            float t1 = raySphere(point+epslon*Ldirs[i], Ldirs[i], spheres[j]);
+            if(t1 < 10000.){               
+               skip = true;
+            }
+            //get the mirror reflection color
+            vec3 Vnew = point+epslon*Rdir;
+            float t2 = raySphere(Vnew, Rdir, spheres[j]);   
+            if(t2 < 10000.){
+               Rrgb += getReflectedColor(Lrgbs[i], Ldirs[i], Vnew+t2*Rdir, spheres[j], sphereMaterials[j]);
+            }
+         }
+
+
+
+         if(skip) continue;
+         vec3 r = 2. * dot(normal,Ldirs[i]) * normal - Ldirs[i];
+         float d = diffuse * max(0., dot(normal, Ldirs[i]));
+         float s = spec * pow(max(0., dot(-W, r)), specPower);
+         //mirrored color
+         color += Rrgb*s*5.;
+         //specular color
+         color += Lrgbs[i]*(d+s);
+      }
+
+      vec3 ambient = material / 5.;
+      return ambient + color;
+   }
+
+   vec3 shadeCube(vec3 W, vec3 point, int id, vec4 space, vec3 material) {
+      vec3 color = vec3(0.,0.,0.);
+      float diffuse = .4;
+      float epslon = .01;
+
+      //normal of the space
+      vec3 normal = space.xyz;
+
+      //specular reflection
+      float spec = .3;
+      float specPower = 10.;
+
+      //mirror reflection
+      vec3 Rrgb = vec3(0.,0.,0.);
+      vec3 Rdir = 2. * dot(normal, -W) * normal - (-W);
+
+      //iterate lights
+      for(int i=0;i<2;i++){ 
+         bool skip = false;
+         //iterate spheres
+         for(int j=0;j<2;j++){
+            //check if in the shadow
+            float t1 = raySphere(point+epslon*Ldirs[i], Ldirs[i], spheres[j]);
+            if(t1 < 10000.){               
+               skip = true;
+            }
+            //get the mirror reflection color
+            vec3 Vnew = point+epslon*Rdir;
+            float t2 = raySphere(Vnew, Rdir, spheres[j]);   
+            if(t2 < 10000.){
+               Rrgb += getReflectedColor(Lrgbs[i], Ldirs[i], Vnew+t2*Rdir, spheres[j], spaceMaterials[j]);
+            }
+         }
+         if(skip) continue;
+         vec3 r = 2. * dot(normal,Ldirs[i]) * normal - Ldirs[i];
+         float d = diffuse * max(0., dot(normal, Ldirs[i]));
+         float s = spec * pow(max(0., dot(-W, r)), specPower);
+         //mirrored color
+         color += Rrgb*s*5.;
+         //specular color
+         color += Lrgbs[i]*(d+s);
+      }
+
+      vec3 ambient = material / 5.;
+      return ambient + color;
+   }
+
+
+   void main(void) {
+      vec2 c = uCursor.xy;
+
+      // YOU NEED TO COMPUTE V AND W TO CREATE THE RAY FOR THIS PIXEL,
+      // USING vPosition.x AND vPosition.y.
+
+      float x = vPosition.x;
+      float y = vPosition.y;
+      vec3 V, W;
+      V = vec3(1.6, 1.9, 6.);
+      //V = vec3(0., 0., 6.);
+      W = normalize(vPosition - V);
+
+
+      // DEFINE LIGHTS
+
+      Ldirs[0] = normalize(vec3(-.5,-.2,.5));
+      Ldirs[1] = normalize(vec3(.5,-.2,.5));
+      //Ldirs[1] = normalize(vec3(.5,.2,-.7));
+      //Ldirs[1] = normalize(vec3(c.x, c.y, 1. - 2. * dot(c, c)));
+
+      Lrgbs[0] = vec3(0.,0.,0.);
+      Lrgbs[1] = vec3(0.,0.,0.);
+      
+      // vary the light(s)
+      float temp = mod(uTime*.3,3.);
+      if(temp>=2.){
+         float i = temp - 2.;
+         Lrgbs[0] = vec3(0.,1.-i,i);
+      }else if(temp>=1.){
+         float i = temp - 1.;
+         Lrgbs[0] = vec3(1.-i,i,0.);
+      }else{
+         float i = temp - 0.;
+         Lrgbs[0] = vec3(i, 0,1.-i);
+      }
+
+      // DEFINE A CUBE
+
+      aCube[0] = vec4(1.,0.,0.,-.35); // x >= -.2
+      aCube[1] = vec4(-1.,0.,0.,-.35); // x <= .2
+      aCube[2] = vec4(0.,1.,0.,-.35);
+      aCube[3] = vec4(0.,-1.,0.,-.35);
+      aCube[4] = vec4(0.,0.,1.,-.35); // z = -4.2
+      aCube[5] = vec4(0.,0.,-1.,-.35);  // z = 4.2
+      
+      /*
+      aCube[0] = vec4(1.,2.,3.,-.2); // x >= -.5
+      aCube[1] = vec4(-1.,-2.,-3.,-.2); // x <= .5
+      aCube[2] = vec4(4.,1.,1.,-.2);
+      aCube[3] = vec4(-4.,-1.,-1.,-.2);
+      aCube[4] = vec4(1.,0.,1.,-.2);
+      aCube[5] = vec4(-1.,0.,-1.,-.2);
+      */
+
+      spaceMaterials[0] = vec3(1.,0.,0.);
+      spaceMaterials[1] = vec3(1.,0.,0.);
+      spaceMaterials[2] = vec3(0.,1.,0.);
+      spaceMaterials[3] = vec3(0.,1.,0.);
+      spaceMaterials[4] = vec3(0.,0.,1.);
+      spaceMaterials[5] = vec3(0.,0.,1.);
+
+      //DEFINE THREE SPHERES
+
+      spheres[1] = vec4(0., .6*cos(uTime*.8), .6*sin(uTime*.8), .1);
+      spheres[0] = vec4(.6*cos(uTime*.5), 0., .6*sin(uTime*.5), .1);
+      spheres[2] = vec4(cos(uTime*.5), sin(uTime*.5), 0., .1);
+
+      sphereMaterials[0] = vec3(1.,1.,0.);
+      sphereMaterials[1] = vec3(1.,0.,1.);
+      sphereMaterials[2] = vec3(0.,1.,1.);
+
+      //DEFINE A CYLINDER
+
+      vec3 cCenter = uCursor;
+      vec3 cDir = normalize(vec3(2.,3.,4.));
+      float cHight = .15;
+
+      vec3 point = cCenter + -cHight*(cDir);
+      float d = - dot(point, cDir);
+      cSpaces[0] = vec4(cDir, d);
+
+      point = cCenter + cHight*(cDir);
+      d = - dot(point, -cDir);
+      cSpaces[1] = vec4(-cDir, d);
+
+      // ASSIGN COLOR TO THIS PIXEL
+
+      // default color
+      vec3 color = vec3(0., 0., 0.);
+
+      // calculate t for spheres
+      tval[0] = raySphere(V, W, spheres[0]); 
+      float tvalMin = tval[0];
+      int sphereIndex = 0;
+      for(int i=1;i<3;i++){
+         tval[i] = raySphere(V, W, spheres[i]);
+         if(tval[i]<tvalMin){
+            tvalMin = tval[i];
+            sphereIndex = i;
+         }
+      }
+
+      // calculate tin and tout for spaces
+      for(int i=0;i<6;i++){
+         vec4 s = aCube[i];
+         float numer = dot(V,s.xyz)+s.w;
+         float denom = dot(W,s.xyz);
+         float t = -numer / denom;
+         if(denom<0.){
+            tins[i] = t;
+            touts[i] = 10000.;
+         }else if(denom>0.){
+            tins[i] = 0.;
+            touts[i] = t;
+         }else{
+            if(numer<=0.){
+               tins[i] = 0.;
+               touts[i] = 10000.;
+            }else{
+               // the ray misses the cube. make sure tinMax will be less than tvalMin
+               for(int j=0;j<6;j++){
+                  tins[j] = -10000.;
+               }
+               break;
+            }
+         }
+      }
+      // get tinMax and toutMin
+      int spaceIndex = 0;
+      color = spaceMaterials[0];
+      float toutMin = touts[0];
+      float tinMax = tins[0];
+      for(int i=1;i<6;i++){
+         if(tins[i]>tinMax){
+            tinMax = tins[i];
+            spaceIndex = i;
+         }
+         if(touts[i]<toutMin) toutMin = touts[i];
+      }
+
+      // if the ray touches a sphere first
+      if(tvalMin!=10000.){
+         for(int i=0;i<3;i++){
+            if(i==sphereIndex){
+               color = shadeSphere(W, V + tval[i] * W, i, spheres[i], spaceMaterials[i]);
+               break;
+            }
+         }
+      // if the ray touches the intersection (the cube) first
+      }
+      if(tinMax<toutMin){
+         for(int i=0;i<6;i++){
+            if(i==spaceIndex){
+               color = spaceMaterials[i];
+               //color = shadeSphere(V + tins[i] * W, aCube[i], materials[i]);
+               //color = shadeSphere(W, V + tins[0] * W, 0, spheres[0], materials[0]);
+               break;      
+            }
+         }
+      // default color (black)
+      }else{
+         color = vec3(0., 0., 0.);
+      }
+      
+      gl_FragColor = vec4(sqrt(color), 1.); // Do Gamma correction.
+   }
+</script>
+
+<script>
+start_gl('canvas1', document.getElementById('my_vertex_shader'  ).innerHTML,
+                    document.getElementById('my_fragment_shader').innerHTML);
+</script>
+

@@ -1,0 +1,89 @@
+<!-- include the library-->
+<script src=lib1.js></script>
+
+<!-- set the canvas -->
+<canvas id='canvas1' width='540' height='540'></canvas>
+<canvas id='canvas2' width='540' height='540'></canvas>
+
+<script id='my_vertex_shader' type='x-shader/x-vertex'>
+   attribute vec3 aPosition;
+   varying   vec3 vPosition;
+   void main() {
+      gl_Position = vec4(aPosition, 1.0); //1.0 is like unit length
+      vPosition = aPosition;
+   }
+</script>
+
+<!!==========================================================================
+
+   Below is the fragment shader from class (with some slight improvements).
+
+   Your assignment is to write your own interesting fragment shader program.
+   Try to have fun with it -- use "uTime" to create animated patterns, and
+   "uCursor" to make it responsive to a user's mouse gestures.
+
+   Try to make something as completely different from my "easter egg" example
+   as possible :-)
+
+============================================================================>
+
+<script id='my_fragment_shader' type='x-shader/x-fragment'>
+   precision mediump float; //define precision for floating numbers
+   uniform float uTime;
+   uniform vec3  uCursor;
+   varying vec3  vPosition;
+   /* random
+   void main1(){
+      vec3 color = vec3(0., .4, 0.);
+      float x = vPosition.x;
+      float y = vPosition.y;
+      if(abs(y)<0.5){
+         color = vec3(.0, .0, .7);
+      }else{
+         if(abs(x)>.3)
+            color = vec3(.0, .6, .0);
+      }
+      gl_FragColor = vec4(color, 1.);
+   }
+   */
+   void main() {
+      vec3 color = vec3(1., .81, .67);                    // Set background color black.
+      //float y = vPosition.y + mod(uTime,5.);                         
+      float x = vPosition.x;                          // Use only x and y coords of
+      float y = vPosition.y;                           //   the square's geometry.
+      float rr = (x * x + y * y) / pow(.7, 2.);         // Compute radius squared.
+      if (rr < 1.) {                                    // If pixel is on sphere:
+         float z = sqrt(1. - rr);                       //    compute z.
+         float t = .4 + .4 * abs(.5-mod(uTime*.4,1.)) + .3 * max(0., x + y + z);   //  do shading.
+         color = vec3(t, t, t);
+         
+         float oriX = .1 - abs(.2-mod(uTime*.2,.4));
+         float oriY = (mod(uTime*.2,.4)>=.2?-1.:1.) * (sqrt(pow(.1,2.) - pow(oriX,2.)));
+         float ii = (pow(x-oriX,2.) + pow(y-oriY,2.)) / pow(.45, 2.);
+         if(ii < 1.){
+            float z2 = sqrt(1. - ii);
+            color *= .1 + .1 * sin(25. * (z2+mod(uTime*0.4,1.4)));
+         }
+         //color.r *= 1. + .2 * sin(30. * (x + .5 * z + .03 * sin(20. * y))); // pattern.
+
+         //make color red
+         //color.g -= .2 * sin(20. * (1. * (x+y) + .05 * sin(30. * y))); 
+         //color.b -= .2 * sin(20. * (1. * (x+y) + .05 * sin(30. * y))); // pattern.
+         
+         //color.r *= 1. + .2 * sin(30. * (.6 * sin(10. * abs(x+y)))); // pattern.
+         //color.r *= 1. + .2 * sin(30. * (z+mod(uTime*0.4,1.4)));     // radiation
+         //color.r *= 1. + .2 * sin(30. * (y+mod(uTime,1.4)));         // circulation
+         
+      }
+      gl_FragColor = vec4(color, 1.);
+   }
+
+</script>
+
+<script>
+start_gl('canvas1', document.getElementById('my_vertex_shader'  ).innerHTML,
+                    document.getElementById('my_fragment_shader').innerHTML);
+start_gl('canvas2', document.getElementById('my_vertex_shader'  ).innerHTML,
+                    document.getElementById('my_fragment_shader').innerHTML);
+</script>
+
