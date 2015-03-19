@@ -96,366 +96,104 @@ Having some fun
 </table>
 
 <script src="./drawlib1.js"></script>
-<script src="./drawlib2.js"></script>
+<script src="./matrix.js"></script>
+<script src="./object.js"></script>
 
 <script>
+
+   // supporting functions
 
    function px(x, width){
       return (width  / 2) + x * (width / 2);
    }
-
    function py(y, width, height){
       return (height / 2) - y * (width / 2);
    }
-
-   //alert(edges[0][0].x);
-
-   var trans = new Matrix4();
-
-
-   function Pyramid(g, trans){
-      this.vertices = vertices;
-
-
-      g.strokeStyle = 'green';
-      g.beginPath();
-
-      var tran = new Matrix4();
-      tran.copy(trans);
-
-      var temp = new Vector3(0,0,0);
-
-      tran.transform(edges[0][0], temp);
-      g.moveTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-      tran.transform(edges[0][1], temp);
-      g.lineTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-
-      for(var i=1;i<4;i++){
-         tran.transform(edges[i][0], temp);
-         g.lineTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-         tran.transform(edges[i][1], temp);
-         g.lineTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-      }
-      g.stroke();
-      for(var i=4;i<8;i++){
-         tran.transform(edges[i][0], temp);
-         g.moveTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-         tran.transform(edges[i][1], temp);
-         g.lineTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-         g.stroke();
-      }
-
-      g.strokeStyle = 'blue';
+   function border(g, color, width, height){
+      g.strokeStyle = color;
       g.beginPath();
       g.moveTo(0,0);
-      g.lineTo(this.width,0);
-      g.lineTo(this.width,this.height);
-      g.lineTo(0,this.height);
+      g.lineTo(width,0);
+      g.lineTo(width,height);
+      g.lineTo(0,height);
       g.lineTo(0,0);
       g.stroke();
-
+   }
+   function getNewPyramid(){
+      var pyramid = new Pyramid();
+      pyramid.addVertex(new Vector3(.5,-.3,.5));
+      pyramid.addVertex(new Vector3(.5,-.3,-.5));
+      pyramid.addVertex(new Vector3(-.5,-.3,-.5));
+      pyramid.addVertex(new Vector3(-.5,-.3,.5));
+      pyramid.addVertex(new Vector3(0.,.5,0.));
+      return pyramid;
    }
 
-   var v1 = new Vector3(.5,-.3,.5);
-   var v2 = new Vector3(.5,-.3,-.5);
-   var v3 = new Vector3(-.5,-.3,-.5);
-   var v4 = new Vector3(-.5,-.3,.5);
-   var v5 = new Vector3(0,.5,0);
-
-   var edges = [[v1, v2], [v2, v3], [v3, v4], [v4, v1], 
-               [v1, v5], [v2, v5], [v3, v5], [v4, v5]];
+   // update canvases
 
    var canvas = initCanvas('canvas1');
-   trans.identity();
-   canvas.update = drawPyramid;
-
-   var canvas = initCanvas('canvas2');
-   trans.identity();
-   trans.translate(-.8+time%2,-0.8+time%2, .2);
-   canvas.update = drawPyramid;
-
-   var canvas = initCanvas('canvas3');
-   trans.identity();
-   trans.rotateX(time);
-   canvas.update = drawPyramid;
-
-   /*
-   canvas.update = function(g) {
-
-      g.strokeStyle = 'green';
-      g.beginPath();
-
-      g.moveTo(px(edges[0][0].x, this.width),py(edges[0][0].y, this.width, this.height));
-      g.lineTo(px(edges[0][1].x, this.width),py(edges[0][1].y, this.width, this.height));
-
-      for(var i=1;i<4;i++){
-         g.lineTo(px(edges[i][0].x, this.width),py(edges[i][0].y, this.width, this.height));
-         g.lineTo(px(edges[i][1].x, this.width),py(edges[i][1].y, this.width, this.height));
-      }
-      g.stroke();
-      for(var i=4;i<8;i++){
-         g.moveTo(px(edges[i][0].x, this.width),py(edges[i][0].y, this.width, this.height));
-         g.lineTo(px(edges[i][1].x, this.width),py(edges[i][1].y, this.width, this.height));
-         g.stroke();
-      }
-
-      g.strokeStyle = 'blue';
-      g.beginPath();
-      g.moveTo(0,0);
-      g.lineTo(this.width,0);
-      g.lineTo(this.width,this.height);
-      g.lineTo(0,this.height);
-      g.lineTo(0,0);
-      g.stroke();
+   canvas.update = function(g){
+      var trans = new Matrix4();
+      var pyramid = getNewPyramid();
+      pyramid.transform(trans);
+      pyramid.draw(g, 'green', px, py, this.height, this.width);
+      border(g, 'blue', this.width, this.height);
    }
-   
-
    var canvas = initCanvas('canvas2');
-   canvas.update = function(g) {
-
-      trans.identity();
+   canvas.update = function(g){
+      var trans = new Matrix4();
       trans.translate(-.8+time%2,-0.8+time%2, .2);
-
-      g.strokeStyle = 'green';
-      g.beginPath();
-
-      var temp = new Vector3(0,0,0);
-
-      trans.transform(edges[0][0], temp);
-      g.moveTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-      trans.transform(edges[0][1], temp);
-      g.lineTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-
-      for(var i=1;i<4;i++){
-         trans.transform(edges[i][0], temp);
-         g.lineTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-         trans.transform(edges[i][1], temp);
-         g.lineTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-      }
-      g.stroke();
-      for(var i=4;i<8;i++){
-         trans.transform(edges[i][0], temp);
-         g.moveTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-         trans.transform(edges[i][1], temp);
-         g.lineTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-         g.stroke();
-      }
-
-      g.strokeStyle = 'blue';
-      g.beginPath();
-      g.moveTo(0,0);
-      g.lineTo(this.width,0);
-      g.lineTo(this.width,this.height);
-      g.lineTo(0,this.height);
-      g.lineTo(0,0);
-      g.stroke();
+      var pyramid = getNewPyramid();
+      pyramid.transform(trans);
+      pyramid.draw(g, 'green', px, py, this.height, this.width);
+      border(g, 'blue', this.width, this.height);
    }
-
    var canvas = initCanvas('canvas3');
-   canvas.update = function(g) {
-
-      trans.identity();
+   canvas.update = function(g){
+      var trans = new Matrix4();
       trans.rotateX(time);
-
-      g.strokeStyle = 'green';
-      g.beginPath();
-
-      var temp = new Vector3(0,0,0);
-
-      trans.transform(edges[0][0], temp);
-      g.moveTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-      trans.transform(edges[0][1], temp);
-      g.lineTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-
-      for(var i=1;i<4;i++){
-         trans.transform(edges[i][0], temp);
-         g.lineTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-         trans.transform(edges[i][1], temp);
-         g.lineTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-      }
-      g.stroke();
-      for(var i=4;i<8;i++){
-         trans.transform(edges[i][0], temp);
-         g.moveTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-         trans.transform(edges[i][1], temp);
-         g.lineTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-         g.stroke();
-      }
-
-      g.strokeStyle = 'blue';
-      g.beginPath();
-      g.moveTo(0,0);
-      g.lineTo(this.width,0);
-      g.lineTo(this.width,this.height);
-      g.lineTo(0,this.height);
-      g.lineTo(0,0);
-      g.stroke();
+      var pyramid = getNewPyramid();
+      pyramid.transform(trans);
+      pyramid.draw(g, 'green', px, py, this.height, this.width);
+      border(g, 'blue', this.width, this.height);
    }
-   */
    var canvas = initCanvas('canvas4');
-   canvas.update = function(g) {
-
-      trans.identity();
+   canvas.update = function(g){
+      var trans = new Matrix4();
       trans.rotateY(time);
-
-      g.strokeStyle = 'green';
-      g.beginPath();
-
-      var temp = new Vector3(0,0,0);
-
-      trans.transform(edges[0][0], temp);
-      g.moveTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-      trans.transform(edges[0][1], temp);
-      g.lineTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-
-      for(var i=1;i<4;i++){
-         trans.transform(edges[i][0], temp);
-         g.lineTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-         trans.transform(edges[i][1], temp);
-         g.lineTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-      }
-      g.stroke();
-      for(var i=4;i<8;i++){
-         trans.transform(edges[i][0], temp);
-         g.moveTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-         trans.transform(edges[i][1], temp);
-         g.lineTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-         g.stroke();
-      }
-
-      g.strokeStyle = 'blue';
-      g.beginPath();
-      g.moveTo(0,0);
-      g.lineTo(this.width,0);
-      g.lineTo(this.width,this.height);
-      g.lineTo(0,this.height);
-      g.lineTo(0,0);
-      g.stroke();
+      var pyramid = getNewPyramid();
+      pyramid.transform(trans);
+      pyramid.draw(g, 'green', px, py, this.height, this.width);
+      border(g, 'blue', this.width, this.height);
    }
-
    var canvas = initCanvas('canvas5');
-   canvas.update = function(g) {
-
-      trans.identity();
+   canvas.update = function(g){
+      var trans = new Matrix4();
       trans.rotateZ(time);
-
-      g.strokeStyle = 'green';
-      g.beginPath();
-
-      var temp = new Vector3(0,0,0);
-
-      trans.transform(edges[0][0], temp);
-      g.moveTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-      trans.transform(edges[0][1], temp);
-      g.lineTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-
-      for(var i=1;i<4;i++){
-         trans.transform(edges[i][0], temp);
-         g.lineTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-         trans.transform(edges[i][1], temp);
-         g.lineTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-      }
-      g.stroke();
-      for(var i=4;i<8;i++){
-         trans.transform(edges[i][0], temp);
-         g.moveTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-         trans.transform(edges[i][1], temp);
-         g.lineTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-         g.stroke();
-      }
-
-      g.strokeStyle = 'blue';
-      g.beginPath();
-      g.moveTo(0,0);
-      g.lineTo(this.width,0);
-      g.lineTo(this.width,this.height);
-      g.lineTo(0,this.height);
-      g.lineTo(0,0);
-      g.stroke();
+      var pyramid = getNewPyramid();
+      pyramid.transform(trans);
+      pyramid.draw(g, 'green', px, py, this.height, this.width);
+      border(g, 'blue', this.width, this.height);
    }
-
    var canvas = initCanvas('canvas6');
-   canvas.update = function(g) {
-
-      trans.identity();
+   canvas.update = function(g){
+      var trans = new Matrix4();
       trans.scale(.5, Math.abs(1.5-time%3), .8);
-
-      g.strokeStyle = 'green';
-      g.beginPath();
-
-      var temp = new Vector3(0,0,0);
-
-      trans.transform(edges[0][0], temp);
-      g.moveTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-      trans.transform(edges[0][1], temp);
-      g.lineTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-
-      for(var i=1;i<4;i++){
-         trans.transform(edges[i][0], temp);
-         g.lineTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-         trans.transform(edges[i][1], temp);
-         g.lineTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-      }
-      g.stroke();
-      for(var i=4;i<8;i++){
-         trans.transform(edges[i][0], temp);
-         g.moveTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-         trans.transform(edges[i][1], temp);
-         g.lineTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-         g.stroke();
-      }
-
-      g.strokeStyle = 'blue';
-      g.beginPath();
-      g.moveTo(0,0);
-      g.lineTo(this.width,0);
-      g.lineTo(this.width,this.height);
-      g.lineTo(0,this.height);
-      g.lineTo(0,0);
-      g.stroke();
+      var pyramid = getNewPyramid();
+      pyramid.transform(trans);
+      pyramid.draw(g, 'green', px, py, this.height, this.width);
+      border(g, 'blue', this.width, this.height);
    }
-
    var canvas = initCanvas('canvas7');
-   canvas.update = function(g) {
-
-      trans.identity();
+   canvas.update = function(g){
+      var trans = new Matrix4();
       trans.scale(.5, Math.abs(1-time%2), .8);
       trans.rotateX(time);
       trans.rotateZ(.3);
-
-      g.strokeStyle = 'green';
-      g.beginPath();
-
-      var temp = new Vector3(0,0,0);
-
-      trans.transform(edges[0][0], temp);
-      g.moveTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-      trans.transform(edges[0][1], temp);
-      g.lineTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-
-      for(var i=1;i<4;i++){
-         trans.transform(edges[i][0], temp);
-         g.lineTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-         trans.transform(edges[i][1], temp);
-         g.lineTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-      }
-      g.stroke();
-      for(var i=4;i<8;i++){
-         trans.transform(edges[i][0], temp);
-         g.moveTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-         trans.transform(edges[i][1], temp);
-         g.lineTo(px(temp.x, this.width),py(temp.y, this.width, this.height));
-         g.stroke();
-      }
-
-      g.strokeStyle = 'blue';
-      g.beginPath();
-      g.moveTo(0,0);
-      g.lineTo(this.width,0);
-      g.lineTo(this.width,this.height);
-      g.lineTo(0,this.height);
-      g.lineTo(0,0);
-      g.stroke();
+      var pyramid = getNewPyramid();
+      pyramid.transform(trans);
+      pyramid.draw(g, 'green', px, py, this.height, this.width);
+      border(g, 'blue', this.width, this.height);
    }
 
 </script>

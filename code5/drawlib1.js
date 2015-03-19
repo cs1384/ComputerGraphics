@@ -34,7 +34,7 @@
 	    var canvas = canvases[i];
             var g = canvas.getContext('2d');
             g.clearRect(0, 0, canvas.width, canvas.height);
-            canvas.update(g, trans);
+            canvas.update(g);
          }
       setTimeout(tick, 1000 / 60);
    }
