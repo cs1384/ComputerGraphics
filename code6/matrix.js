@@ -30,7 +30,7 @@ Matrix4.prototype = {
             for(var j=0;j<4;j++){
                 var temp = 0;
                 for(var k=0;k<4;k++){
-                    temp += this.M[k][i] * matrix.M[j][k];
+                    temp += this.M[i][k] * matrix.M[k][j];
                 }
                 m.M[i][j] = temp;
             }
@@ -39,16 +39,12 @@ Matrix4.prototype = {
     },
     translate : function(x, y, z) {
         var m = new Matrix4();
-        
-		this.M[0][3] = x;
-		this.M[1][3] = y;
-		this.M[2][3] = z;
-        /*
         m.M[0][3] = x;
         m.M[1][3] = y;
         m.M[2][3] = z;
         this.multiply(m);
-        */
+        
+        
     },
     rotateX : function(theta) {
         var m = new Matrix4();
@@ -85,10 +81,10 @@ Matrix4.prototype = {
     	newX = this.M[0][0] * src.x + this.M[0][1] * src.y + this.M[0][2] * src.z + this.M[0][3];
     	newY = this.M[1][0] * src.x + this.M[1][1] * src.y + this.M[1][2] * src.z + this.M[1][3];
     	newZ = this.M[2][0] * src.x + this.M[2][1] * src.y + this.M[2][2] * src.z + this.M[2][3];
-        newZ = this.M[3][0] * src.x + this.M[3][1] * src.y + this.M[3][2] * src.z + this.M[3][3];
-    	dst.x = newX / newZ; 
-    	dst.y = newY / newZ;
-    	dst.z = newZ / newZ;
+        newW = this.M[3][0] * src.x + this.M[3][1] * src.y + this.M[3][2] * src.z + this.M[3][3];
+    	dst.x = newX / newW; 
+    	dst.y = newY / newW;
+    	dst.z = newZ / newW;
     },
     perspective : function(x, y, z){
         var m = new Matrix4();

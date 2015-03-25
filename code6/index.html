@@ -57,7 +57,7 @@ Parametric surfaces.
 <td width="50"></td>
 <td valign="top">
 <p>
-Test
+Walking man playing bascketball.
 </p>
 </td>
 </tr>
@@ -67,7 +67,7 @@ Test
 <td width="50"></td>
 <td valign="top">
 <p>
-Test
+Professor's example.
 </p>
 </td>
 </tr>
@@ -101,6 +101,7 @@ Test
         g.lineTo(0,0);
         g.stroke();
     }
+    //function drawLine(g, color, from, to, width, height){
     function drawLine(g, color, from, to, height, width){
         g.lineWidth = 20;
         g.lineCap = "round";
@@ -255,9 +256,9 @@ Test
         cube.transform(trans);
         cube.draw(g, 'green', px, py, this.height, this.width);
 
-        trans.translate(Math.sin(time)*.7,Math.sin(time)*.7, .1);
+        //trans.translate(Math.sin(time)*.7,Math.sin(time)*.7, .1);
         //trans.translate(.4,.5,.7);
-        //trans.translate(-.5+time%2,-0.8+time%2, .2);
+        trans.translate(-.5+time%3,-0.8+time%2, .2);
         var pyramid = getNewPyramid();
         pyramid.transform(trans);
         pyramid.draw(g, 'green', px, py, this.height, this.width);
@@ -267,6 +268,7 @@ Test
 
     var canvas = initCanvas('canvas3');
     canvas.update = function(g){
+        time *= .6;
         var trans = new Matrix4();
         trans.scale(.1, Math.abs(1-time%2)*.9, .1);
         //trans.scale(.3, .3, .3);
@@ -302,43 +304,56 @@ Test
         //trans.translate(-1.26+time%0.08+time%2.4,-.3,0);   
 
         trans.translate(-1.2+time%2.4,.3,0);
-        trans.rotateX(time);
-        //trans.translate(-1.2+time%2.4,.3,0);
-        //trans.rotateX(time);
-        head.transform(trans);        
+        head.transform(trans);
 
+        trans.identity();
         trans.translate(-1.2+time%2.4,.2,0);
         trans.transform(origin, neck);
 
+        trans.identity();
         trans.translate(-1.2+time%2.4,-.1,0);        
         trans.transform(origin, butt);
 
+        trans.identity();
         trans.translate(-1.2+time%2.4,.15,0);
         trans.transform(origin, shoulder);
 
+        trans.identity();
+        trans.rotateZ(Math.cos(3*time) * .25);
         trans.translate(-1+time%2.4,.13,0);
         trans.transform(origin, elbow);
 
+        trans.identity();
+        trans.rotateZ(Math.cos(3*time) * .25);
         trans.translate(-.9+time%2.4,.21,0);
         trans.transform(origin, hand);
 
-        trans.rotateX(time);
-        trans.translate(-1.05+time%2.4,-.18,0);
-        //trans.rotateZ(Math.cos(time)*.5);
-        trans.transform(origin, rknee);
-
-        trans.translate(-1.1+time%2.4,-.38,0);
-        trans.rotateZ(Math.cos(3*time) * .25 - .25);
-        //trans.translate(Math.sin(3*time)+time%2.4,-.38,0);
-        trans.transform(origin, rfoot);
-
+        trans.identity();
+        trans.rotateZ(Math.cos(3*time) * .25 - .1);
+        trans.translate(-.9+time%2.4,.36,0);
+        trans.rotateY(time);
+        //trans.rotateZ(Math.cos(3*time) * .5 - .5);
+        trans.scale(.1,.1,.1);
+        ball.transform(trans);
 
         trans.identity();
-        trans.translate(-.9+time%2.4,.36,0);
-        trans.scale(.1,.1,.1);
-        trans.rotateY(time);
-        //trans.translate(-.9+time%2.4,.36,0);
-        ball.transform(trans);
+        trans.rotateX(time);
+        trans.rotateZ(Math.cos(3*time) * .5);
+        //trans.rotateZ(Math.cos(3*time) * .25 - .25);
+        trans.translate(-1.05+time%2.4,-.18,0);
+        trans.transform(origin, rknee);
+
+        trans.identity();
+        //trans.rotateZ(Math.sin(3*time) * .25 - .25);
+        //trans.translate(-1.05-Math.abs(.4-time%.8)+time%2.4,-.48,0);
+        trans.translate(-1.2-Math.abs(.2-time%.4)+time%2.4,-.48,0);
+        trans.transform(origin, rfoot);
+
+        trans.identity();
+        //trans.rotateZ(Math.abs(1-Math.cos(time)%2));
+        //trans.translate(-1.35+Math.abs(.4-time%.8)+time%2.4,-.48,0);
+        trans.translate(-1.2+Math.abs(.2-time%.4)+time%2.4,-.48,0);
+        trans.transform(origin, lfoot);
         
         head.draw(g, 'green', px, py, this.height, this.width);
         ball.draw(g, 'orange', px, py, this.height, this.width);
@@ -346,12 +361,14 @@ Test
         drawLine(g, 'green', neck, butt, this.height, this.width);
         drawLine(g, 'green', shoulder, elbow, this.height, this.width);
         drawLine(g, 'green', elbow, hand, this.height, this.width);
-        drawLine(g, 'green', butt, rknee, this.height, this.width);
-        drawLine(g, 'green', rknee, rfoot, this.height, this.width);
-        //drawLine(g, 'green', rknee, rfoot, this.height, this.width);
+        
+        drawLine(g, 'green', butt, rfoot, this.height, this.width);
+        //drawLine(g, 'green', butt, rknee, this.height, this.width);
+        //drawLine(g, 'green', rknee, rfoot, this.height, this.width); 
 
-        //drawLine(g, 'green', lshoulder, lelbow, this.height, this.width);
-        //drawLine(g, 'green', lelbow, lhand, this.height, this.width);
+        drawLine(g, 'green', butt, lfoot, this.height, this.width);
+        //drawLine(g, 'green', butt, lknee, this.height, this.width);
+        //drawLine(g, 'green', rknee, lfoot, this.height, this.width);
 
         border(g, 'blue', this.width, this.height);
     }
@@ -363,43 +380,38 @@ Test
     var elbow = new Vector3();
     var wrist = new Vector3();
     var fingertips = new Vector3();
+
     var canvas = initCanvas('canvas5');
-    var m = new Matrix4(); 
+    //var m = new Matrix4(); 
     canvas.update = function(g) {
-        this.g = g; // so the drawLine method will know where to draw to. 
+        var m = new Matrix4(); 
         var theta = 3 * time;
 
         g.lineWidth = 10;
         g.lineCap = "round"; 
         g.lineJoin = "round";
         g.fillStyle = 'rgb(220,250,255)'; 
-        
-        g.beginPath();
-        g.moveTo(0,0); 
-        g.lineTo(this.width,0); 
-        g.lineTo(this.width,this.height); 
-        g.lineTo(0,this.height); 
-        g.fill();
-        
-        m.identity();
-        m.rotateZ(Math.cos(theta) * .5);
+
         m.translate(.2,.3,0);
+        m.rotateZ(Math.cos(theta) * .5);
         m.transform(origin, shoulder);
 
-        m.translate(0,-.2,0); 
+        m.translate(0,-.2,0);
         m.transform(origin, elbow);
 
+        m.rotateZ(Math.sin(theta) * .5 + .5);
         m.translate(0,-.2,0);
-        m.rotateZ(Math.sin(theta) * .5 + .5); 
         m.transform(origin, wrist);
-        
+
+        m.rotateZ(Math.cos(theta) * .25 - .25);
         m.translate(0,-.1,0);
-        m.rotateZ(Math.cos(theta) * .25 - .25); 
         m.transform(origin, fingertips);
-        
-        //drawLine(g, 'green', shoulder, elbow, this.height, this.width); 
-        //drawLine(g, 'green', elbow, wrist, this.height, this.width); 
+
+        drawLine(g, 'green', shoulder, elbow, this.height, this.width); 
+        drawLine(g, 'green', elbow, wrist, this.height, this.width); 
         drawLine(g, 'green', wrist, fingertips, this.height, this.width);
+
+        border(g, 'blue', this.width, this.height);
     }
 
 </script>
