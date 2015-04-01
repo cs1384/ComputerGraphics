@@ -1,0 +1,428 @@
+
+<!-- saved from url=(0051)http://mrl.nyu.edu/~perlin/courses/spring2015/0304/ -->
+<html>
+
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+</head>
+<body>
+   <hr color="white" size="25"><table><tbody><tr><td width="25"></td><td>
+<font face="helvetica">
+<center>
+   <big>
+   <b>
+
+Computer Graphics, Homework7, N14689375 Yen-Tin Liu
+
+   </b>
+   </big>
+</center>
+<br><br>
+
+<table>
+<tbody>
+
+<tr>
+<td><canvas id="canvas1" width="500" height="300"></canvas></td>
+<td width="50"></td>
+<td valign="top">
+<p>
+Hermite.
+</p>
+</td>
+</tr>
+
+<tr>
+<td><canvas id="canvas2" width="500" height="300"></canvas></td>
+<td width="50"></td>
+<td valign="top">
+<p>
+Click on the canvas to put a point.
+</p>
+</td>
+</tr>
+
+</tbody>
+</table>
+
+<script src="./drawlib1.js"></script>
+<script src="./matrix.js"></script>
+<script src="./object.js"></script>
+<script src="./noise.js"></script>
+<script src="./spline.js"></script>
+<script src="./editor.js"></script>
+
+<script>
+
+   // supporting functions
+
+    function px(x, width){
+        return (width  / 2) + x * (width / 2);
+    }
+    function py(y, width, height){
+        return (height / 2) - y * (width / 2);
+    }
+    function border(g, color, width, height){
+        g.lineWidth = 1;
+        g.strokeStyle = color;
+        g.beginPath();
+        g.moveTo(0,0);
+        g.lineTo(width,0);
+        g.lineTo(width,height);
+        g.lineTo(0,height);
+        g.lineTo(0,0);
+        g.stroke();
+    }
+    //function drawLine(g, color, from, to, width, height){
+    function drawLine(g, color, from, to, height, width){
+        g.lineWidth = 20;
+        g.lineCap = "round";
+        g.lineJoin = "round";
+        g.strokeStyle = color;
+
+        g.beginPath();
+        var x = px(from.x, width);
+        var y = py(from.y, width, height);
+        g.moveTo(x, y);
+        x = px(to.x, width);
+        y = py(to.y, width, height);
+        g.lineTo(x, y);
+        g.stroke();
+        g.closePath();
+    }
+    function getNewPyramid(){
+        var pyramid = new Pyramid();
+        pyramid.addVertex(new Vector3(.5,-.3,.5));
+        pyramid.addVertex(new Vector3(.5,-.3,-.5));
+        pyramid.addVertex(new Vector3(-.5,-.3,-.5));
+        pyramid.addVertex(new Vector3(-.5,-.3,.5));
+        pyramid.addVertex(new Vector3(0.,.5,0.));
+        return pyramid;
+    }
+    function getNewCube(){
+        var cube = new Cube();
+        cube.addVertex(new Vector3(.3,.3,.3));
+        cube.addVertex(new Vector3(.3,.3,-.3));
+        cube.addVertex(new Vector3(-.3,.3,-.3));
+        cube.addVertex(new Vector3(-.3,.3,.3));
+
+        cube.addVertex(new Vector3(.3,-.3,.3));
+        cube.addVertex(new Vector3(.3,-.3,-.3));
+        cube.addVertex(new Vector3(-.3,-.3,-.3));
+        cube.addVertex(new Vector3(-.3,-.3,.3));
+        return cube;
+    }
+    function getNewCylinder(){
+        var object = new Object();
+        var count = 0;
+        var n = new Noise();
+        for(var v=0;v<=1;v+=0.1){
+            var layer = 0;
+            for(var u=0;u<=1;u+=0.05){
+                var theta = 2 * Math.PI * u;
+                object.addVertex(new Vector3(Math.sin(theta), 2*v-1, Math.cos(theta)));
+                count++;
+                layer++;
+            }
+            var temp = count - layer;
+            var i = 0;
+            for(;i<layer-1;i++){
+                object.addEdge(temp+i, temp+i+1);
+            }
+            object.addEdge(temp+i, temp);
+            if(v!=0){
+                for(j=0;j<layer;j++){
+                    object.addEdge(temp+j, temp+j-layer);
+                }
+            }
+        }
+        return object;
+    }
+    function getNewCylinder2(){
+        var object = new Object();
+        var count = 0;
+        var n = new Noise();
+        for(var v=0;v<=1;v+=0.1){
+            var layer = 0;
+            for(var u=0;u<=1;u+=0.05){
+                var theta = 2 * Math.PI * u;
+                var change = Math.sin(n.noise([.2,.3,.4]))*v*u;
+                object.addVertex(new Vector3(Math.sin(theta)*Math.pow(v-.3,change)+.2, 2*v-1, Math.cos(theta)*Math.pow(v-.3,change)+.2));
+                count++;
+                layer++;
+            }
+            var temp = count - layer;
+            var i = 0;
+            for(;i<layer-1;i++){
+                object.addEdge(temp+i, temp+i+1);
+            }
+            object.addEdge(temp+i, temp);
+            if(v!=0){
+                for(j=0;j<layer;j++){
+                    object.addEdge(temp+j, temp+j-layer);
+                }
+            }
+        }
+        return object;
+    }
+    function getNewSphere(){
+        var object = new Object();
+        var count = 0;
+        var n = new Noise();
+        for(var v=0;v<=1;v+=0.1){
+            var layer = 0;
+            for(var u=0;u<=1;u+=0.05){
+                var theta = 2 * Math.PI * u;
+                var phi = Math.PI*v - Math.PI/2;
+                object.addVertex(new Vector3(Math.sin(theta), Math.cos(theta)*Math.sin(phi), Math.cos(theta)*Math.cos(phi)));
+                count++;
+                layer++;
+            }
+            var temp = count - layer;
+            var i = 0;
+            for(;i<layer-1;i++){
+                object.addEdge(temp+i, temp+i+1);
+            }
+            object.addEdge(temp+i, temp);
+            if(v!=0){
+                for(j=0;j<layer;j++){
+                    object.addEdge(temp+j, temp+j-layer);
+                }
+            }
+        }
+        return object;
+    }
+    function getNewSquare(){
+        var square = new Square();
+        square.addVertex(new Vector3(-.075,-.075,0));
+        square.addVertex(new Vector3(-.075,.075,0));
+        square.addVertex(new Vector3(.075,.075,0));
+        square.addVertex(new Vector3(.075,-.075,0));
+        return square;
+    }
+
+   // update canvases
+
+    var canvas = initCanvas('canvas1');
+    canvas.update = function(g){
+        var hermiteX = new Hermite();
+        var hermiteY = new Hermite();
+
+        var vec = new Vector4(2,-3,0,1);
+        hermiteX.setColumn(0,vec);
+        hermiteY.setColumn(0,vec);
+        
+        vec = new Vector4(-2,3,0,0);
+        hermiteX.setColumn(1,vec);
+        hermiteY.setColumn(1,vec);
+        
+        vec = new Vector4(1,-2,1,0);
+        hermiteX.setColumn(2,vec);
+        hermiteY.setColumn(2,vec);
+
+        vec = new Vector4(1,-1,0,0);
+        hermiteX.setColumn(3,vec);
+        hermiteY.setColumn(3,vec);
+
+        hermiteX.setPositions(-.5,.2);
+        hermiteX.setRates(6,Math.abs(10-time%20));
+        hermiteY.setPositions(-.5,.2);
+        hermiteY.setRates(Math.abs(10-time%20),Math.cos(3*time));
+
+        hermiteX.getCoefficients();
+        hermiteY.getCoefficients();
+
+        g.lineWidth = 10;
+        g.strokeStyle = "red";
+        g.beginPath();
+
+        g.moveTo(px(hermiteX.getCoordinate(0),this.width), py(hermiteY.getCoordinate(0),this.width, this.height));
+        for(var t = 0.0 ; t <= 1.0 ; t += 0.01){
+            //alert(hermiteX.getCoordinate(t));
+            g.lineTo(px(hermiteX.getCoordinate(t),this.width), py(hermiteY.getCoordinate(t),this.width, this.height));
+        }
+        g.stroke();
+        border(g, 'blue', this.width, this.height);
+    }
+
+    var canvas = new Editor('canvas2');
+
+    /*
+    var canvas = initCanvas('canvas2');
+    canvas.update = function(g){
+        var trans = new Matrix4();
+
+        trans.scale(.5, Math.abs(1-time%2), .8);
+        //trans.translate(-.8+time%2,-0.8+time%2, .2);
+        trans.rotateX(time);
+        trans.rotateZ(time);
+        var cube = getNewCube();
+        cube.transform(trans);
+        cube.draw(g, 'green', px, py, this.height, this.width);
+
+        //trans.translate(Math.sin(time)*.7,Math.sin(time)*.7, .1);
+        //trans.translate(.4,.5,.7);
+        trans.translate(-.5+time%3,-0.8+time%2, .2);
+        var pyramid = getNewPyramid();
+        pyramid.transform(trans);
+        pyramid.draw(g, 'green', px, py, this.height, this.width);
+
+        border(g, 'blue', this.width, this.height);
+    }
+    */
+
+    /*
+    var canvas = initCanvas('canvas3');
+    canvas.update = function(g){
+        time *= .6;
+        var trans = new Matrix4();
+        trans.scale(.1, Math.abs(1-time%2)*.9, .1);
+        //trans.scale(.3, .3, .3);
+        trans.perspective(0.3,0,Math.abs(1-time%2)*.2);
+        //trans.rotateX(Math.pow(Math.abs(0.5-time%1),2));
+        trans.rotateX(time);
+        trans.rotateY(time);
+        var cylinder = getNewCylinder2();
+        cylinder.transform(trans);
+        cylinder.draw(g, 'green', px, py, this.height, this.width);
+        border(g, 'blue', this.width, this.height);
+    }
+
+    var head = getNewSquare();
+
+    var origin = new Vector3(0,0,0);
+    var neck = new Vector3();
+    var shoulder = new Vector3();
+    var elbow = new Vector3();
+    var hand = new Vector3();
+    var butt = new Vector3();
+    var rknee = new Vector3();
+    var rfoot = new Vector3();
+    var lknee = new Vector3();
+    var lfoot = new Vector3();
+
+    var canvas = initCanvas('canvas4');
+    canvas.update = function(g){
+        var trans = new Matrix4();
+        
+        var head = new getNewSquare();
+        var ball = new getNewSphere();
+        //trans.translate(-1.26+time%0.08+time%2.4,-.3,0);   
+
+        trans.translate(-1.2+time%2.4,.3,0);
+        head.transform(trans);
+
+        trans.identity();
+        trans.translate(-1.2+time%2.4,.2,0);
+        trans.transform(origin, neck);
+
+        trans.identity();
+        trans.translate(-1.2+time%2.4,-.1,0);        
+        trans.transform(origin, butt);
+
+        trans.identity();
+        trans.translate(-1.2+time%2.4,.15,0);
+        trans.transform(origin, shoulder);
+
+        trans.identity();
+        trans.rotateZ(Math.cos(3*time) * .25);
+        trans.translate(-1+time%2.4,.13,0);
+        trans.transform(origin, elbow);
+
+        trans.identity();
+        trans.rotateZ(Math.cos(3*time) * .25);
+        trans.translate(-.9+time%2.4,.21,0);
+        trans.transform(origin, hand);
+
+        trans.identity();
+        trans.rotateZ(Math.cos(3*time) * .25 - .1);
+        trans.translate(-.9+time%2.4,.36,0);
+        trans.rotateY(time);
+        //trans.rotateZ(Math.cos(3*time) * .5 - .5);
+        trans.scale(.1,.1,.1);
+        ball.transform(trans);
+
+        trans.identity();
+        trans.rotateX(time);
+        trans.rotateZ(Math.cos(3*time) * .5);
+        //trans.rotateZ(Math.cos(3*time) * .25 - .25);
+        trans.translate(-1.05+time%2.4,-.18,0);
+        trans.transform(origin, rknee);
+
+        trans.identity();
+        //trans.rotateZ(Math.sin(3*time) * .25 - .25);
+        //trans.translate(-1.05-Math.abs(.4-time%.8)+time%2.4,-.48,0);
+        trans.translate(-1.2-Math.abs(.2-time%.4)+time%2.4,-.48,0);
+        trans.transform(origin, rfoot);
+
+        trans.identity();
+        //trans.rotateZ(Math.abs(1-Math.cos(time)%2));
+        //trans.translate(-1.35+Math.abs(.4-time%.8)+time%2.4,-.48,0);
+        trans.translate(-1.2+Math.abs(.2-time%.4)+time%2.4,-.48,0);
+        trans.transform(origin, lfoot);
+        
+        head.draw(g, 'green', px, py, this.height, this.width);
+        ball.draw(g, 'orange', px, py, this.height, this.width);
+
+        drawLine(g, 'green', neck, butt, this.height, this.width);
+        drawLine(g, 'green', shoulder, elbow, this.height, this.width);
+        drawLine(g, 'green', elbow, hand, this.height, this.width);
+        
+        drawLine(g, 'green', butt, rfoot, this.height, this.width);
+        //drawLine(g, 'green', butt, rknee, this.height, this.width);
+        //drawLine(g, 'green', rknee, rfoot, this.height, this.width); 
+
+        drawLine(g, 'green', butt, lfoot, this.height, this.width);
+        //drawLine(g, 'green', butt, lknee, this.height, this.width);
+        //drawLine(g, 'green', rknee, lfoot, this.height, this.width);
+
+        border(g, 'blue', this.width, this.height);
+    }
+
+    // test
+
+    var origin = new Vector3(0,0,0); 
+    var shoulder = new Vector3();
+    var elbow = new Vector3();
+    var wrist = new Vector3();
+    var fingertips = new Vector3();
+
+    var canvas = initCanvas('canvas5');
+    //var m = new Matrix4(); 
+    canvas.update = function(g) {
+        var m = new Matrix4(); 
+        var theta = 3 * time;
+
+        g.lineWidth = 10;
+        g.lineCap = "round"; 
+        g.lineJoin = "round";
+        g.fillStyle = 'rgb(220,250,255)'; 
+
+        m.translate(.2,.3,0);
+        m.rotateZ(Math.cos(theta) * .5);
+        m.transform(origin, shoulder);
+
+        m.translate(0,-.2,0);
+        m.transform(origin, elbow);
+
+        m.rotateZ(Math.sin(theta) * .5 + .5);
+        m.translate(0,-.2,0);
+        m.transform(origin, wrist);
+
+        m.rotateZ(Math.cos(theta) * .25 - .25);
+        m.translate(0,-.1,0);
+        m.transform(origin, fingertips);
+
+        drawLine(g, 'green', shoulder, elbow, this.height, this.width); 
+        drawLine(g, 'green', elbow, wrist, this.height, this.width); 
+        drawLine(g, 'green', wrist, fingertips, this.height, this.width);
+
+        border(g, 'blue', this.width, this.height);
+    }
+    */
+
+</script>
+
+</p><p>&nbsp;</p><p></p><hr>&nbsp;<p>
+&nbsp;
+</body></html>
