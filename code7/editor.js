@@ -1,6 +1,5 @@
 function Editor(canvasId){
 	this.canvas = initCanvas(canvasId);
-	//var rect = this.canvas.getBoundingClientRect();
 	var lines = [];
 	var pointR = 5;
 	var pointN = 0;
@@ -14,7 +13,7 @@ function Editor(canvasId){
         	y: evt.clientY - rect.top
       	};
     }
-    
+
     this.canvas.addEventListener('mousedown', function(evt) {
         var mousePos = this.getMousePos(evt);
         var existing = false;
@@ -45,12 +44,32 @@ function Editor(canvasId){
         curPoint = undefined;
     }, false);
 
+    this.canvas.addEventListener('dblclick', function(evt) {
+    	var mousePos = this.getMousePos(evt);
+        var existing = false;
+        for(var i=0;i<lines.length;i++){
+        	var line = lines[i];
+        	for(var j=0;j<line.points.length;j++){
+        		var p = line.points[j];
+        		var dist = Math.abs(p.x - mousePos.x) + Math.abs(p.y - mousePos.y);
+        		if(dist<pointR*2){
+        			lines[p.lineId].deletePoint(p);
+        			return;
+        		}
+        	}
+        }
+    }, false);
+
     this.canvas.addEventListener('mousemove', function(evt) {
         if(curPoint !== undefined){
         	var mousePos = this.getMousePos(evt);
         	curPoint.x = mousePos.x;
         	curPoint.y = mousePos.y;
         }
+    }, false);
+
+    this.canvas.addEventListener('mouseup', function(evt) {
+        curPoint = undefined;
     }, false);
 
 	this.canvas.update = function(g){
@@ -114,7 +133,7 @@ Spline.prototype = {
 	deletePoint : function(point){
 		for(var i=0;i<this.points.length;i++){
 			if(this.points[i].isTheSame(point)){
-				this.point.splice(i,1);
+				this.points.splice(i,1);
 				return;
 			}
 		}
@@ -129,7 +148,6 @@ Spline.prototype = {
 				temp.push(newPoint);
 			}
 			arr = temp;
-			//alert(arr.length);
 		}
 		return arr[0];
 	},
@@ -139,18 +157,11 @@ Spline.prototype = {
         g.strokeStyle = "black";
         g.beginPath();
         var dot = this.getDot(0);
-        //alert(dot);
         g.moveTo(dot.x, dot.y);
-        
-        //g.moveTo(10,10);
-        //g.lineTo(100,100);
-        
         for(var t = 0.01 ; t <= 1.0 ; t += 0.01){
             dot = this.getDot(t);
             g.lineTo(dot.x, dot.y);
-            //alert("draw");
         }
-        
         g.stroke();
 	},
 }
