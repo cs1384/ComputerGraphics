@@ -62,7 +62,7 @@ function init() {
    // OBJECTS
 
    var material = new THREE.MeshNormalMaterial();        
-   ball = new THREE.Mesh(new THREE.SphereGeometry(1, 10, 10), material);
+   ball = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 20), material);
    ball.position.set(1,1,1);
    scene.add(ball);
 
