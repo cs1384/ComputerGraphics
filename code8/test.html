@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <style>
+            #container {
+                width: 400px;
+                height: 300px;
+            }
+        </style>
+        <script type="text/javascript" src=three.js></script>
+        <script type="text/javascript">
+            var controls;
+            window.onload = function() {
+                //var RENDER_WIDTH = 400, RENDER_HEIGHT = 300;
+                var RENDER_WIDTH = window.innerWidth, RENDER_HEIGHT = window.innerHeight;
+
+                // Creating scene
+                var scene = new THREE.Scene();
+
+                // Camera
+                var camera = new THREE.PerspectiveCamera(45, RENDER_WIDTH / RENDER_HEIGHT, 0.1, 10000);
+                camera.position.z = 300;
+                scene.add(camera);
+                controls = new THREE.FirstPersonControls(camera);
+                controls.movementSpeed = 1000;
+                controls.lookSpeed = 0.125;
+                controls.lookVertical = true;
+
+                // Sphere
+                var sphereMaterial = new THREE.MeshLambertMaterial({
+                    color: 0x00ff00
+                });
+                var radius = 50, segments = 16, rings = 16;
+                var sphere = new THREE.Mesh(
+                    new THREE.SphereGeometry(radius, segments, rings),
+                    sphereMaterial
+                );
+                scene.add(sphere);
+
+                // Light
+                scene.add(new THREE.AmbientLight(0x333333));
+                var light = new THREE.PointLight(0xffffff, 0.9);
+                light.position.set(50, 200, 50);
+                scene.add(light);
+
+                // Render
+                var container = document.getElementById('container');
+                var renderer = new THREE.WebGLRenderer();
+                renderer.setSize(RENDER_WIDTH, RENDER_HEIGHT);
+                renderer.setClearColorHex(0x000000, 1);
+                container.appendChild(renderer.domElement);
+
+                var clock = new THREE.Clock();
+                setInterval(function() {
+                    var delta = clock.getDelta();
+                    controls.update(delta);
+                    renderer.render(scene, camera);
+                }, 100);
+            };
+        </script>
+    </head>
+    <body>
+        <div id="container"></div>
+    </body>
+</html>

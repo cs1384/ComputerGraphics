@@ -1,20 +1,25 @@
 if(!Detector.webgl) Detector.addGetWebGLMessage();
 
+// BASIC
+
 var container;
 var camera, scene, renderer;
-var controls;
-var raycaster;
 
-var objects = []
+// OBJECT
+
 var particles, geometry, materials = [], parameters, i, h, color, size;
 var treasures = [];
 var ball;
 
-var mouseX = 0;
-var mouseY = 0;
+// FIRST PERSON CONTROL
+// http://www.html5rocks.com/en/tutorials/pointerlock/intro/
 
-var windowHalfX = window.innerWidth / 2;
-var windowHalfY = window.innerHeight / 2;
+var controls;
+var controlBall;
+var raycaster;
+var objects = []
+
+var controlsEnabled = false;
 
 var moveForward = false;
 var moveBackward = false;
@@ -24,9 +29,10 @@ var moveLeft = false;
 var prevTime = performance.now();
 var velocity = new THREE.Vector3();
 
+// ENTERING MODE
+
 var blocker = document.getElementById( 'blocker' );
 var instructions = document.getElementById( 'instructions' );
-// http://www.html5rocks.com/en/tutorials/pointerlock/intro/
 var havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
 
 if ( havePointerLock ) {
@@ -36,9 +42,11 @@ if ( havePointerLock ) {
       if ( document.pointerLockElement === element || document.mozPointerLockElement === element || document.webkitPointerLockElement === element ) {
          controlsEnabled = true;
          controls.enabled = true;
+         controlBall.enabled = true;
          blocker.style.display = 'none';
       } else {
          controls.enabled = false;
+         controlBall.enabled = false;
          blocker.style.display = '-webkit-box';
          blocker.style.display = '-moz-box';
          blocker.style.display = 'box';
@@ -83,16 +91,10 @@ if ( havePointerLock ) {
    instructions.innerHTML = 'Your browser doesn\'t seem to support Pointer Lock API';
 }
 
-document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+// FIRE 
+
 init();
 animate();
-
-function onDocumentMouseMove( event ) {
-   mouseX = ( event.clientX - windowHalfX ) * 0.10;
-   mouseY = ( event.clientY - windowHalfY ) * 0.10;
-}
-
-var controlsEnabled = false;
 
 function init() {
 
@@ -103,11 +105,12 @@ function init() {
    scene = new THREE.Scene();
 
    camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
-   camera.position.set( 4, 2, 4 );
+   camera.position.set( 1, 1, 12 );
    scene.add(camera);
 
    controls = new THREE.PointerLockControls( camera );
    scene.add( controls.getObject() );
+   //objects.push(camera);
 
    raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, 10 );
 
@@ -130,13 +133,17 @@ function init() {
    light.position.set(1,1,1).normalize();
    scene.add(light);
 
-   // OBJECTS
+   // BALL
 
    var material = new THREE.MeshNormalMaterial();        
-   ball = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 20), material);
-   ball.position.set(1,1,1);
+   ball = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 16), material);
+   ball.position.set(1,0,1);
    scene.add(ball);
    objects.push(ball);
+   controlBall = new THREE.PointerLockControls3( ball );
+   scene.add( controlBall.getObject() );
+
+   // TREASURES
 
    for(var i=0;i<4;i++){
       treasures[i] = new THREE.Mesh( new THREE.TetrahedronGeometry( 2, 1 ), material );
@@ -188,70 +195,51 @@ function init() {
 
    }
 
-   //
+   // KEY EVENTS
 
    var onKeyDown = function ( event ) {
+      switch ( event.keyCode ) {
+         case 38: // up
+         case 87: // w
+            moveForward = true;
+            break;
+         case 37: // left
+         case 65: // a
+            moveLeft = true; break;
+         case 40: // down
+         case 83: // s
+            moveBackward = true;
+            break;
+         case 39: // right
+         case 68: // d
+            moveRight = true;
+            break;
+      }
 
-               switch ( event.keyCode ) {
+   };
+   var onKeyUp = function ( event ) {
+      switch( event.keyCode ) {
+         case 38: // up
+         case 87: // w
+            moveForward = false;
+            break;
+         case 37: // left
+         case 65: // a
+            moveLeft = false;
+            break;
+         case 40: // down
+         case 83: // s
+            moveBackward = false;
+            break;
+         case 39: // right
+         case 68: // d
+            moveRight = false;
+            break;
+      }
+   };
 
-                  case 38: // up
-                  case 87: // w
-                     moveForward = true;
-                     break;
-
-                  case 37: // left
-                  case 65: // a
-                     moveLeft = true; break;
-
-                  case 40: // down
-                  case 83: // s
-                     moveBackward = true;
-                     break;
-
-                  case 39: // right
-                  case 68: // d
-                     moveRight = true;
-                     break;
-
-                  case 32: // space
-                     if ( canJump === true ) velocity.y += 350;
-                     canJump = false;
-                     break;
-
-               }
-
-            };
-
-            var onKeyUp = function ( event ) {
-
-               switch( event.keyCode ) {
-
-                  case 38: // up
-                  case 87: // w
-                     moveForward = false;
-                     break;
-
-                  case 37: // left
-                  case 65: // a
-                     moveLeft = false;
-                     break;
-
-                  case 40: // down
-                  case 83: // s
-                     moveBackward = false;
-                     break;
-
-                  case 39: // right
-                  case 68: // d
-                     moveRight = false;
-                     break;
-
-               }
-
-            };
-
-            document.addEventListener( 'keydown', onKeyDown, false );
-            document.addEventListener( 'keyup', onKeyUp, false );
+   document.addEventListener( 'keydown', onKeyDown, false );
+   document.addEventListener( 'keyup', onKeyUp, false );
 
    // RENDERER
    
@@ -259,19 +247,15 @@ function init() {
    renderer.setSize( window.innerWidth, window.innerHeight);
    container.appendChild( renderer.domElement );
 
-    //
+   // SITUATION OF WINDOW RESIZE
 
    window.addEventListener( 'resize', onWindowResize, false );
 
 }
 
 function onWindowResize() {
-   windowHalfX = window.innerWidth / 2,
-   windowHalfY = window.innerHeight / 2,
-
    camera.aspect = window.innerWidth / window.innerHeight;
    camera.updateProjectionMatrix();
-
    renderer.setSize( window.innerWidth, window.innerHeight );
 }
 
@@ -279,55 +263,75 @@ function animate() {
    requestAnimationFrame( animate );
 
    if ( controlsEnabled ) {
-               raycaster.ray.origin.copy( controls.getObject().position );
-               raycaster.ray.origin.y -= 10;
+      raycaster.ray.origin.copy( controls.getObject().position );
+      raycaster.ray.origin.y -= 10;
 
-               var intersections = raycaster.intersectObjects( objects );
+      var intersections = raycaster.intersectObjects( objects );
 
-               var isOnObject = intersections.length > 0;
+      var isOnObject = intersections.length > 0;
 
-               var time = performance.now();
-               var delta = ( time - prevTime ) / 1000;
+      var time = performance.now();
+      var delta = ( time - prevTime ) / 1000;
 
-               velocity.x -= velocity.x * 10.0 * delta;
-               velocity.z -= velocity.z * 10.0 * delta;
+      velocity.x -= velocity.x * 10.0 * delta;
+      velocity.z -= velocity.z * 10.0 * delta;
 
-               velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
+      velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
 
-               if ( moveForward ){
-                  velocity.z -= 400.0 * delta;
-                  //ball.position.z -= 40.0 * delta;
-               }
-               if ( moveBackward ){
-                  velocity.z += 400.0 * delta;
-                  //ball.position.z += 40.0 * delta;
-               }
-               if ( moveLeft ){
-                  velocity.x -= 400.0 * delta;
-                  //ball.position.x -= 40.0 * delta;
-               }
-               if ( moveRight ){
-                  velocity.x += 400.0 * delta;
-                  //ball.position.x += 40.0 * delta;
-               }
+      // DECIDE MOVING VELOCITY
 
-               if ( isOnObject === true ) {
-                  velocity.y = Math.max( 0, velocity.y );
-               }
+      if ( moveForward ) velocity.z -= 400.0 * delta;
+      if ( moveBackward ) velocity.z += 400.0 * delta;
+      if ( moveLeft ) velocity.x -= 400.0 * delta;
+      if ( moveRight ) velocity.x += 400.0 * delta;
 
-               controls.getObject().translateX( velocity.x * delta );
-               controls.getObject().translateY( velocity.y * delta );
-               controls.getObject().translateZ( velocity.z * delta );
+      if ( isOnObject === true ) {
+         velocity.y = Math.max( 0, velocity.y );
+      }
 
-               if ( controls.getObject().position.y < 10 ) {
-                  velocity.y = 0;
-                  controls.getObject().position.y = 10;
-               }
+      // CHANGE POSITION OF CONTROLLED OBJECT 
 
-               prevTime = time;
+      controls.getObject().translateX( velocity.x * delta );
+      controls.getObject().translateY( velocity.y * delta );
+      controls.getObject().translateZ( velocity.z * delta );
 
-            }
-            
+      // ball is always on the grid, no Y change needed
+      controlBall.getObject().translateX( velocity.x * delta );
+      controlBall.getObject().translateZ( velocity.z * delta );
+
+      // BOUNDARA SETTING
+
+      if ( controls.getObject().position.y < 2 ) {
+         velocity.y = 0;
+         controls.getObject().position.y = 2;
+      }
+      
+      // grid
+      if ( controls.getObject().position.x < -30 ) {
+         velocity.x = 0;
+         controls.getObject().position.x = -30;
+         controlBall.getObject().position.x = -30;
+      }
+      if ( controls.getObject().position.x > 28 ) {
+         velocity.x = 0;
+         controls.getObject().position.x = 28;
+         controlBall.getObject().position.x = 28;
+      }
+      if ( controls.getObject().position.z < -30 ) {
+         velocity.z = 0;
+         controls.getObject().position.z = -30;
+         controlBall.getObject().position.z = -30;
+      }
+      if ( controls.getObject().position.z > 28 ) {
+         velocity.z = 0;
+         controls.getObject().position.z = 28;
+         controlBall.getObject().position.z = 28;
+      }
+
+      prevTime = time;
+
+   }
+   
    render();
 }
 
@@ -335,44 +339,33 @@ var clock = new THREE.Clock();
 
 function render() {
 
-   // BALL
+   // BALL ITSELF
 
-   var timer = 0.001 * Date.now();
-   ball.rotation.x = -timer;
-   ball.rotation.z = Math.PI/2;
-   //ball.position.x = camera.position.x;
-   //ball.position.y = camera.position.y;
-   
-   /*
-   if(moveForward && ball.position.x<=29) ball.position.x += .5;
-   if(moveBackward && ball.position.x>=-29) ball.position.x -= .5;
-   if(moveRight && ball.position.z<=29) ball.position.z += .5;
-   if(moveLeft && ball.position.z>=-29) ball.position.z -= .5;
-   */
+   var timer1 = 0.01 * Date.now();
+   if (moveForward){
+      ball.rotation.x = -timer1;
+      ball.rotation.z = Math.PI/2;
+   } else if (moveBackward){
+      ball.rotation.x = timer1;
+      ball.rotation.z = Math.PI/2;
+   } else if (moveLeft){
+      //ball.rotation.z = timer1;
+      ball.rotation.y = timer1;
+      ball.rotation.x = Math.PI/2;
+   } else if (moveRight){
+      //ball.rotation.z = -timer1;
+      ball.rotation.y = -timer1;
+      ball.rotation.x = Math.PI/2;
+   }
 
    // TREATURES
 
+   var timer2 = 0.001 * Date.now();
    for(var i=0;i<4;i++){
-      //treasures[i].rotation.z = time;
-      treasures[i].position.y = Math.abs(2-timer*10%4)+2;
+      treasures[i].position.y = Math.abs(2-timer2*10%4)+2;
    }
    
-   // CAMERA 
-
-   //camera.position.y += ( - mouseY - camera.position.y ) * .05;
-   //camera.lookAt( ball.position );
-
-   //var timer = Date.now() * 0.0005;
-   //camera.position.x = Math.cos( timer ) * 10;
-    //camera.position.y = 3;
-   //camera.position.z = ball.rotation.z;
-   //camera.lookAt( scene.position );
-   
-   //camera.position.x += ( mouseX - camera.position.x ) * .05;
-   //camera.position.y += ( - mouseY - camera.position.y ) * .05;
-   //camera.position.x = ball.position.x;
-   //camera.position.z = ball.position.z;
-   //camera.lookAt( ball.position );
+   // CAMERA - handled by controller
    
    // PARTICLE
 
@@ -390,6 +383,5 @@ function render() {
    }
 
    //cameraCube.rotation.copy( camera.rotation );
-   //renderer.render( sceneCube, cameraCube );
    renderer.render( scene, camera );
 }
