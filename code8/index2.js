@@ -277,6 +277,7 @@ function onWindowResize() {
 
 function animate() {
    requestAnimationFrame( animate );
+
    if ( controlsEnabled ) {
                raycaster.ray.origin.copy( controls.getObject().position );
                raycaster.ray.origin.y -= 10;
@@ -321,6 +322,7 @@ function animate() {
                prevTime = time;
 
             }
+            
    render();
 }
 
@@ -333,8 +335,8 @@ function render() {
    var timer = 0.001 * Date.now();
    ball.rotation.x = -timer;
    ball.rotation.z = Math.PI/2;
-   ball.position.x = camera.position.x;
-   ball.position.y = camera.position.y;
+   //ball.position.x = camera.position.x;
+   //ball.position.y = camera.position.y;
    
    /*
    if(moveForward && ball.position.x<=29) ball.position.x += .5;
