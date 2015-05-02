@@ -7,9 +7,15 @@ var camera, scene, renderer;
 
 // OBJECT
 
-var particles, geometry, materials = [], parameters, i, h, color, size;
+var particles, geometry, materials = [], parameters, i, h, color, pSize;
 var treasures = [];
 var ball;
+
+// GRID PARAMETER
+
+var size = 30, step = 3;
+var len = size*2/step-1
+var grid = new Array(len)
 
 // FIRST PERSON CONTROL
 // http://www.html5rocks.com/en/tutorials/pointerlock/intro/
@@ -28,6 +34,10 @@ var moveLeft = false;
 
 var prevTime = performance.now();
 var velocity = new THREE.Vector3();
+
+// GAMING CONTROL
+
+var count = 0;
 
 // ENTERING MODE
 
@@ -105,7 +115,7 @@ function init() {
    scene = new THREE.Scene();
 
    camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
-   camera.position.set( 1, 1, 12 );
+   camera.position.set( 0, 1, 12 );
    scene.add(camera);
 
    controls = new THREE.PointerLockControls( camera );
@@ -114,8 +124,7 @@ function init() {
 
    raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, 10 );
 
-   // GRID
-   var size = 30, step = 2;
+   // VIRTUAL GRID
    var geometry = new THREE.Geometry();
    var material = new THREE.LineBasicMaterial( { color: 0x303030 } );
    for ( var i = - size; i <= size; i += step ) {
@@ -127,7 +136,19 @@ function init() {
    var line = new THREE.Line( geometry, material, THREE.LinePieces );
    scene.add( line );
 
-    // LIGHT
+   // REAL GRID
+   var xStart = - size - step/2
+   for (var i=0;i<len;i++){
+      xStart += step
+      var zStart = - size - step/2 
+      grid[i] = new Array(len)
+      for (var j=0;j<grid[i].length;j++){
+         zStart += step
+         grid[i][j] = new THREE.Vector3( xStart, - 0.1, zStart )
+      }
+   }
+
+   // LIGHT
 
    var light = new THREE.DirectionalLight(0xffffff);
    light.position.set(1,1,1).normalize();
@@ -137,14 +158,20 @@ function init() {
 
    var material = new THREE.MeshNormalMaterial();        
    ball = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 16), material);
-   ball.position.set(1,0,1);
-   scene.add(ball);
-   objects.push(ball);
+   ball.position.set(0,0,1);
+   //scene.add(ball);
+   //objects.push(ball);
    controlBall = new THREE.PointerLockControls3( ball );
    scene.add( controlBall.getObject() );
 
    // TREASURES
 
+   var idx = Math.floor(Math.random()*(len*len));
+   treasure = new THREE.Mesh( new THREE.TetrahedronGeometry( 2, 1 ), material );
+   var pos = grid[Math.floor(idx/len)][idx%len];
+   treasure.position.set(pos.x, pos.y, pos.z);
+   scene.add(treasure)
+   /*
    for(var i=0;i<4;i++){
       treasures[i] = new THREE.Mesh( new THREE.TetrahedronGeometry( 2, 1 ), material );
       //objects.push(treasures[i]);
@@ -154,6 +181,7 @@ function init() {
    treasures[2].position.set( 28.5, 2, -28.5);
    treasures[3].position.set( 28.5, 2, 28.5);
    for(var i=0;i<4;i++) scene.add( treasures[i] );
+   */
 
    // PARTICLE
 
@@ -181,9 +209,9 @@ function init() {
    for ( i = 0; i < parameters.length; i ++ ) {
 
       color = parameters[i][0];
-      size  = parameters[i][1];
+      pSize  = parameters[i][1];
 
-      materials[i] = new THREE.PointCloudMaterial( { size: size } );
+      materials[i] = new THREE.PointCloudMaterial( { pSize: pSize } );
 
       particles = new THREE.PointCloud( geometry, materials[i] );
 
@@ -284,10 +312,10 @@ function animate() {
 
       // DECIDE MOVING VELOCITY
 
-      if ( moveForward ) velocity.z -= 400.0 * delta;
-      if ( moveBackward ) velocity.z += 400.0 * delta;
-      if ( moveLeft ) velocity.x -= 400.0 * delta;
-      if ( moveRight ) velocity.x += 400.0 * delta;
+      if ( moveForward ) velocity.z -= 300.0 * delta;
+      if ( moveBackward ) velocity.z += 300.0 * delta;
+      if ( moveLeft ) velocity.x -= 300.0 * delta;
+      if ( moveRight ) velocity.x += 300.0 * delta;
 
       if ( isOnObject === true ) {
          velocity.y = Math.max( 0, velocity.y );
@@ -312,32 +340,32 @@ function animate() {
          controls.getObject().position.y = 2;
          canJump = true;
       }
-      if ( controlBall.getObject().position.y < 2 ) {
+      if ( controlBall.getObject().position.y < 1.1 ) {
          velocity.y = 0;
-         controlBall.getObject().position.y = 2;
+         controlBall.getObject().position.y = 1.1;
          canJump = true;
       }
       
       // grid
-      if ( controls.getObject().position.x < -30 ) {
+      if ( controls.getObject().position.x < - size ) {
          velocity.x = 0;
-         controls.getObject().position.x = -30;
-         controlBall.getObject().position.x = -30;
+         controls.getObject().position.x = - size;
+         controlBall.getObject().position.x = - size;
       }
-      if ( controls.getObject().position.x > 28 ) {
+      if ( controls.getObject().position.x > size ) {
          velocity.x = 0;
-         controls.getObject().position.x = 28;
-         controlBall.getObject().position.x = 28;
+         controls.getObject().position.x = size;
+         controlBall.getObject().position.x = size;
       }
-      if ( controls.getObject().position.z < -30 ) {
+      if ( controlBall.getObject().position.z < -size ) {
          velocity.z = 0;
-         controls.getObject().position.z = -30;
-         controlBall.getObject().position.z = -30;
+         controls.getObject().position.z = -size;
+         controlBall.getObject().position.z = -size;
       }
-      if ( controls.getObject().position.z > 28 ) {
+      if ( controlBall.getObject().position.z > size ) {
          velocity.z = 0;
-         controls.getObject().position.z = 28;
-         controlBall.getObject().position.z = 28;
+         controls.getObject().position.z = size;
+         controlBall.getObject().position.z = size;
       }
 
       prevTime = time;
@@ -373,10 +401,21 @@ function render() {
    // TREATURES
 
    var timer2 = 0.001 * Date.now();
+   treasure.position.y = Math.abs(2-timer2*10%4)+2;
+   /*
    for(var i=0;i<4;i++){
       treasures[i].position.y = Math.abs(2-timer2*10%4)+2;
    }
-   
+   */
+
+   var xDiff = Math.abs(controlBall.getObject().position.x - treasure.position.x)
+   var zDiff = Math.abs(controlBall.getObject().position.z - treasure.position.z)
+   if (Math.sqrt(Math.pow(xDiff,2.0)+Math.pow(zDiff,2.0))<step/1.6 && controlBall.getObject().position.y<10){
+      var idx = Math.floor(Math.random()*(len*len));
+      var pos = grid[Math.floor(idx/len)][idx%len];
+      treasure.position.set(pos.x, pos.y, pos.z);
+   }
+
    // CAMERA - handled by controller
    
    // PARTICLE
