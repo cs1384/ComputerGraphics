@@ -38,7 +38,7 @@ var velocity = new THREE.Vector3();
 // GAMING CONTROL
 
 var count = 0;
-var level = 3;
+var level = 1;
 
 // MONSTERS
 
@@ -49,6 +49,7 @@ var ctrl = {
    moveLeft: false,
    moveRight: false
 };
+var directions = []
 
 
 // ENTERING MODE
@@ -58,6 +59,7 @@ var instructions = document.getElementById( 'instructions' );
 var havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
 
 if ( havePointerLock ) {
+   document.getElementById("slogan").innerHTML = 'Level '+ level
    var element = document.body;
 
    var pointerlockchange = function ( event ) {
@@ -137,6 +139,7 @@ function init() {
    raycaster = new THREE.Raycaster( new THREE.Vector3(), new THREE.Vector3( 0, - 1, 0 ), 0, 10 );
 
    // VIRTUAL GRID
+
    var geometry = new THREE.Geometry();
    var material = new THREE.LineBasicMaterial( { color: 0x303030 } );
    for ( var i = - size; i <= size; i += step ) {
@@ -149,6 +152,7 @@ function init() {
    scene.add( line );
 
    // REAL GRID
+
    var xStart = - size - step/2
    for (var i=0;i<len;i++){
       xStart += step
@@ -183,17 +187,6 @@ function init() {
    var pos = grid[Math.floor(idx/len)][idx%len];
    treasure.position.set(pos.x, pos.y, pos.z);
    scene.add(treasure)
-   /*
-   for(var i=0;i<4;i++){
-      treasures[i] = new THREE.Mesh( new THREE.TetrahedronGeometry( 2, 1 ), material );
-      //objects.push(treasures[i]);
-   }
-   treasures[0].position.set( -28.5, 2, -28.5);
-   treasures[1].position.set( -28.5, 2, 28.5);
-   treasures[2].position.set( 28.5, 2, -28.5);
-   treasures[3].position.set( 28.5, 2, 28.5);
-   for(var i=0;i<4;i++) scene.add( treasures[i] );
-   */
 
    // PARTICLE
 
@@ -235,8 +228,8 @@ function init() {
 
    }
 
-   // MONSTER
-   /*
+   // MONSTERS
+   
    var config = {
       baseUrl: "models/ratamahatta/",
       body: "ratamahatta.js",
@@ -255,20 +248,54 @@ function init() {
                ]
    };
 
+   for ( var i = 0; i < 3; i ++ ) {
+      var character = new THREE.MD2Character();
+      character.scale = .5+level*.2;
+      characters.push( character );
+   }
+
+   var baseCharacter = new THREE.MD2Character();
+   baseCharacter.scale = .5+level*.2;
+   baseCharacter.onLoadComplete = function () {
+      //baseCharacter.setSkin(2);
+      var k = 0;
+      var divide = size*2/(3+1);
+      for ( var i = 0; i < 3; i ++ ) {
+         var cloneCharacter = characters[ k ];
+         cloneCharacter.shareParts( baseCharacter );
+         cloneCharacter.setSkin(i);
+         cloneCharacter.setAnimation('run');
+         cloneCharacter.root.position.x = -size + (i+1)*divide;
+         cloneCharacter.root.position.z = -size +7;
+         var dir = new THREE.Vector3();
+         dir.x = cloneCharacter.root.position.x;
+         dir.y = cloneCharacter.root.position.y;
+         dir.z = cloneCharacter.root.position.z;
+         directions.push(dir);
+         scene.add( cloneCharacter.root );
+         k++;
+      }
+      alert(characters.length);
+   };
+
+   baseCharacter.loadParts( config );
+
+   /*
    character = new THREE.MD2Character();
    character.scale = .8;
    
    character.onLoadComplete = function() {
       alert('complete!');
       character.setSkin(2);
-      character.setAnimation('run');
+      character.setAnimation('jump');
    }
    
    character.loadParts( config );
    scene.add( character.root );
    */
+   
    // CHARACTER
-
+   /*
    var configOgro = {
       baseUrl: "models/ratamahatta/",
       body: "ratamahatta.js",
@@ -299,15 +326,6 @@ function init() {
       crouchSpeed: 175
    };
 
-   /*
-   var ctrl = {
-      moveForward: false,
-      moveBackward: false,
-      moveLeft: false,
-      moveRight: false
-   };
-   */
-
    for ( var i = 0; i < level; i ++ ) {
       var character = new THREE.MD2CharacterComplex();
       character.scale = .8;
@@ -325,27 +343,28 @@ function init() {
    baseCharacter.onLoadComplete = function () {
       alert('complete!');
       //baseCharacter.setSkin(2);
-      baseCharacter.setAnimation('run');
+      baseCharacter.setAnimation('jump');
       var k = 0;
       var divide = size*2/(level+1);
       for ( var i = 0; i < level; i ++ ) {
          var cloneCharacter = characters[ k ];
          cloneCharacter.shareParts( baseCharacter );
          cloneCharacter.setSkin(i);
-         cloneCharacter.setAnimation('run');
+         cloneCharacter.setAnimation('jump');
          cloneCharacter.root.position.x = -size + (i+1)*divide;
          cloneCharacter.root.position.z = -size +7;
          scene.add( cloneCharacter.root );
          k++;
       }
-      /*
-      var gyro = new THREE.Gyroscope();
-      gyro.add( camera );
-      characters[ Math.floor( nSkins/2 ) ].root.add( gyro );
-      */
+      
+      //var gyro = new THREE.Gyroscope();
+      //gyro.add( camera );
+      //characters[ Math.floor( nSkins/2 ) ].root.add( gyro );
+      
    };
 
    baseCharacter.loadParts( configOgro );
+   */
    
 
    // KEY EVENTS
@@ -503,8 +522,43 @@ function animate() {
    //ctrl.moveRight = true;
    //ctrl.moveForward = true;
    for ( var i = 0; i < characters.length; i ++ ) {
-      characters[i].controls.moveLeft = true;
-      characters[i].update( delta*.1 );
+      //characters[i].controls.moveLeft = true;
+      if (i==level-1){
+         var point = new THREE.Vector3();
+         point.x = controlBall.getObject().position.x;
+         point.y = characters[i].root.position.y
+         point.z = controlBall.getObject().position.z;
+         characters[i].root.lookAt(point);
+         characters[i].root.translateX( delta*5 );
+         characters[i].root.translateZ( delta*5 );
+      }else{
+         /*
+         if (directions[i].x == characters[i].root.position.x && 
+            directions[i].z == characters[i].root.position.z){
+            var idx = Math.floor(Math.random()*(len*len));
+            var pos = grid[Math.floor(idx/len)][idx%len];
+            alert(pos.x);
+            alert(pos.z);
+            var point = new THREE.Vector3();
+            point.x = pos.x;
+            point.y = characters[i].root.position.y
+            point.z = pos.z;
+            directions[i] = point;
+            characters[i].root.lookAt(point);
+         }
+         */
+      }
+      characters[i].update( delta*.5 );
+   }
+   var rayDir = new THREE.Vector3(0,1,0);
+   var caster = new THREE.Raycaster();
+   caster.far = 3;
+   caster.set(controlBall.getObject().position, rayDir);
+   for ( var i = 0; i < characters.length; i ++ ) {
+      var collisions = caster.intersectObjects(characters[i].root.children);
+      if(collisions.length>0){
+         characters[i].setAnimation('jump');
+      }
    }
    render();
 }
@@ -541,10 +595,10 @@ function render() {
       treasures[i].position.y = Math.abs(2-timer2*10%4)+2;
    }
    */
-
    var xDiff = Math.abs(controlBall.getObject().position.x - treasure.position.x)
    var zDiff = Math.abs(controlBall.getObject().position.z - treasure.position.z)
    if (Math.sqrt(Math.pow(xDiff,2.0)+Math.pow(zDiff,2.0))<step/1.6 && controlBall.getObject().position.y<10){
+      count++;
       var idx = Math.floor(Math.random()*(len*len));
       var pos = grid[Math.floor(idx/len)][idx%len];
       treasure.position.set(pos.x, pos.y, pos.z);
@@ -566,8 +620,6 @@ function render() {
       h = ( 360 * ( color[0] + time ) % 360 ) / 360;
       materials[i].color.setHSL( h, color[1], color[2] );
    }
-
-   // CHARACTER
 
    //cameraCube.rotation.copy( camera.rotation );
    renderer.render( scene, camera );

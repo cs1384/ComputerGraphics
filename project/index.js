@@ -59,9 +59,7 @@ var instructions = document.getElementById( 'instructions' );
 var havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
 
 if ( havePointerLock ) {
-   document.getElementById("slogan").innerHTML = 'Level '+ level
    var element = document.body;
-
    var pointerlockchange = function ( event ) {
       if ( document.pointerLockElement === element || document.mozPointerLockElement === element || document.webkitPointerLockElement === element ) {
          controlsEnabled = true;
@@ -172,7 +170,7 @@ function init() {
 
    // BALL
 
-   var material = new THREE.MeshNormalMaterial();        
+   var material = new THREE.MeshNormalMaterial();         
    ball = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 16), material);
    ball.position.set(0,0,1);
    //scene.add(ball);
@@ -198,7 +196,6 @@ function init() {
       vertex.x = Math.random() * 2000 - 1000;
       vertex.y = Math.random() * 2000 - 1000;
       vertex.z = Math.random() * 2000 - 1000;
-
       geometry.vertices.push( vertex );
 
    }
@@ -250,12 +247,12 @@ function init() {
 
    for ( var i = 0; i < 3; i ++ ) {
       var character = new THREE.MD2Character();
-      character.scale = .5+level*.2;
+      character.scale = .7+level*.2;
       characters.push( character );
    }
 
    var baseCharacter = new THREE.MD2Character();
-   baseCharacter.scale = .5+level*.2;
+   baseCharacter.scale = .7+level*.2;
    baseCharacter.onLoadComplete = function () {
       //baseCharacter.setSkin(2);
       var k = 0;
@@ -265,8 +262,16 @@ function init() {
          cloneCharacter.shareParts( baseCharacter );
          cloneCharacter.setSkin(i);
          cloneCharacter.setAnimation('run');
-         cloneCharacter.root.position.x = -size + (i+1)*divide;
-         cloneCharacter.root.position.z = -size +7;
+         if(i==0){
+            cloneCharacter.root.position.x = -size +38
+            cloneCharacter.root.position.z = -size +7;
+         }else if(i==1){
+            cloneCharacter.root.position.x = -size +13
+            cloneCharacter.root.position.z = size +25;
+         }else{
+            cloneCharacter.root.position.x = size+42
+            cloneCharacter.root.position.z = -size +30;
+         }
          var dir = new THREE.Vector3();
          dir.x = cloneCharacter.root.position.x;
          dir.y = cloneCharacter.root.position.y;
@@ -275,97 +280,10 @@ function init() {
          scene.add( cloneCharacter.root );
          k++;
       }
-      alert(characters.length);
+      alert('Giant are comming!');
    };
 
    baseCharacter.loadParts( config );
-
-   /*
-   character = new THREE.MD2Character();
-   character.scale = .8;
-   
-   character.onLoadComplete = function() {
-      alert('complete!');
-      character.setSkin(2);
-      character.setAnimation('jump');
-   }
-   
-   character.loadParts( config );
-   scene.add( character.root );
-   */
-   
-   // CHARACTER
-   /*
-   var configOgro = {
-      baseUrl: "models/ratamahatta/",
-      body: "ratamahatta.js",
-      skins: [ "ratamahatta.png", "ctf_b.png", "ctf_r.png", "dead.png", "gearwhore.png" ],
-      weapons:  [  [ "weapon.js", "weapon.png" ],
-                [ "w_bfg.js", "w_bfg.png" ],
-                [ "w_blaster.js", "w_blaster.png" ],
-                [ "w_chaingun.js", "w_chaingun.png" ],
-                [ "w_glauncher.js", "w_glauncher.png" ],
-                [ "w_hyperblaster.js", "w_hyperblaster.png" ],
-                [ "w_machinegun.js", "w_machinegun.png" ],
-                [ "w_railgun.js", "w_railgun.png" ],
-                [ "w_rlauncher.js", "w_rlauncher.png" ],
-                [ "w_shotgun.js", "w_shotgun.png" ],
-                [ "w_sshotgun.js", "w_sshotgun.png" ]
-               ],
-      animations: {
-         move: "run",
-         idle: "stand",
-         jump: "jump",
-         attack: "attack",
-         crouchMove: "cwalk",
-         crouchIdle: "cstand",
-         crouchAttach: "crattack"
-      },
-
-      walkSpeed: 350,
-      crouchSpeed: 175
-   };
-
-   for ( var i = 0; i < level; i ++ ) {
-      var character = new THREE.MD2CharacterComplex();
-      character.scale = .8;
-      character.controls = {
-         moveForward: false,
-         moveBackward: false,
-         moveLeft: false,
-         moveRight: false
-      };
-      characters.push( character );
-   }
-
-   var baseCharacter = new THREE.MD2CharacterComplex();
-   baseCharacter.scale = .8;
-   baseCharacter.onLoadComplete = function () {
-      alert('complete!');
-      //baseCharacter.setSkin(2);
-      baseCharacter.setAnimation('jump');
-      var k = 0;
-      var divide = size*2/(level+1);
-      for ( var i = 0; i < level; i ++ ) {
-         var cloneCharacter = characters[ k ];
-         cloneCharacter.shareParts( baseCharacter );
-         cloneCharacter.setSkin(i);
-         cloneCharacter.setAnimation('jump');
-         cloneCharacter.root.position.x = -size + (i+1)*divide;
-         cloneCharacter.root.position.z = -size +7;
-         scene.add( cloneCharacter.root );
-         k++;
-      }
-      
-      //var gyro = new THREE.Gyroscope();
-      //gyro.add( camera );
-      //characters[ Math.floor( nSkins/2 ) ].root.add( gyro );
-      
-   };
-
-   baseCharacter.loadParts( configOgro );
-   */
-   
 
    // KEY EVENTS
 
@@ -435,6 +353,8 @@ function onWindowResize() {
    renderer.setSize( window.innerWidth, window.innerHeight );
 }
 
+
+var preTime = 0;
 function animate() {
    requestAnimationFrame( animate );
    var time = performance.now();
@@ -521,43 +441,55 @@ function animate() {
    //character.update( delta*.2 );
    //ctrl.moveRight = true;
    //ctrl.moveForward = true;
-   for ( var i = 0; i < characters.length; i ++ ) {
-      //characters[i].controls.moveLeft = true;
-      if (i==level-1){
-         var point = new THREE.Vector3();
-         point.x = controlBall.getObject().position.x;
-         point.y = characters[i].root.position.y
-         point.z = controlBall.getObject().position.z;
-         characters[i].root.lookAt(point);
-         characters[i].root.translateX( delta*5 );
-         characters[i].root.translateZ( delta*5 );
-      }else{
-         /*
-         if (directions[i].x == characters[i].root.position.x && 
-            directions[i].z == characters[i].root.position.z){
-            var idx = Math.floor(Math.random()*(len*len));
-            var pos = grid[Math.floor(idx/len)][idx%len];
-            alert(pos.x);
-            alert(pos.z);
-            var point = new THREE.Vector3();
-            point.x = pos.x;
-            point.y = characters[i].root.position.y
-            point.z = pos.z;
-            directions[i] = point;
-            characters[i].root.lookAt(point);
-         }
-         */
-      }
+   var i = 0;
+   for (i = 0; i < 1; i ++ ) {
+      var mul = Math.floor(Math.random()*15);
+      var point = new THREE.Vector3();
+      point.x = controlBall.getObject().position.x;
+      point.y = characters[i].root.position.y
+      point.z = controlBall.getObject().position.z;
+      characters[i].root.lookAt(point);
+      characters[i].root.translateX( delta*mul );
+      characters[i].root.translateZ( delta*mul );
       characters[i].update( delta*.5 );
    }
+
+   for(;i<2;i++){
+      var mul = Math.floor(Math.random()*7);
+      var point = new THREE.Vector3();
+      point.x = -controlBall.getObject().position.x;
+      point.y = characters[i].root.position.y
+      point.z = controlBall.getObject().position.z;
+      characters[i].root.lookAt(point);
+      characters[i].root.translateX( delta*2*mul );
+      characters[i].root.translateZ( delta*2*mul );
+      characters[i].update( delta*.2*mul );
+   }
+
+   for(;i<3;i++){
+      var mul = Math.floor(Math.random()*12);
+      var point = new THREE.Vector3();
+      point.x = controlBall.getObject().position.x;
+      point.y = characters[i].root.position.y
+      point.z = -controlBall.getObject().position.z;
+      characters[i].root.lookAt(point);
+      characters[i].root.translateX( delta*mul );
+      characters[i].root.translateZ( delta*mul );
+      characters[i].update( delta*.1*mul );
+   }
+
+
    var rayDir = new THREE.Vector3(0,1,0);
    var caster = new THREE.Raycaster();
    caster.far = 3;
    caster.set(controlBall.getObject().position, rayDir);
    for ( var i = 0; i < characters.length; i ++ ) {
       var collisions = caster.intersectObjects(characters[i].root.children);
-      if(collisions.length>0){
-         alert('stamp');
+      if(collisions.length>0 && ball.position.y<10){
+         var m = new THREE.Matrix4();
+         m.makeScale(.9,.9,.9);
+         ball.applyMatrix(m);
+         //alert('Ouch');
       }
    }
    render();
@@ -601,6 +533,9 @@ function render() {
       var idx = Math.floor(Math.random()*(len*len));
       var pos = grid[Math.floor(idx/len)][idx%len];
       treasure.position.set(pos.x, pos.y, pos.z);
+      var m = new THREE.Matrix4();
+      m.makeScale(1.1,1.1,1.1);
+      ball.applyMatrix(m);
    }
 
    // CAMERA - handled by controller
