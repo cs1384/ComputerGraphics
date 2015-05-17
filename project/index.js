@@ -354,7 +354,6 @@ function onWindowResize() {
 }
 
 
-var preTime = 0;
 function animate() {
    requestAnimationFrame( animate );
    var time = performance.now();
